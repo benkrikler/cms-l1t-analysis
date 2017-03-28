@@ -43,17 +43,18 @@ class Analyzer(BaseAnalyzer):
         add_met_variable = partial(
             self.efficiencies.add_variable, bins=bins, thresholds=thresholds)
         map(add_met_variable, self.met_calcs)
+        return True
 
     def fill_histograms(self,entry,event):
         pileup = event.nVertex
         if pileup < 5 or not event.passesMETFilter():
             return True
-        histograms.set_pileup(pileup)
+        self.efficiencies.set_pileup(pileup)
 
         offlineMetBE = event.sums.caloMetBE
         for name,config in self.met_calcs.items():
-            onlineMet=config['calculate'].calc(event,pileup)
-            self.efficiencies[name].fill(offlineMetBE,onlineMet)
+            onlineMet=config['calculate'](event.caloTowers,pileup)
+            self.efficiencies.fill(name,offlineMetBE,onlineMet)
 
         return True
 
