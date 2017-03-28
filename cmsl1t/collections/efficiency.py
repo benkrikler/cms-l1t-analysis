@@ -195,9 +195,10 @@ class EfficiencyCollection(HistogramsByPileUpCollection):
 
     @staticmethod
     def from_root(input_file):
-        instance=HistogramsByPileUpCollection.from_root(self, input_file)
+        instance=HistogramsByPileUpCollection.from_root(input_file)
         # Need to recalculate efficiency curves in case combined histogram files have been read back in
         instance._calculateEfficiencies()
+        return instance
 
     def summarise(self):
         '''
