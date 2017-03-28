@@ -64,15 +64,5 @@ class Analyzer(BaseAnalyzer):
         return True
 
     def make_plots(self):
-        # plotting should be separate, this is just here as an example
-#        from rootpy.io import root_open
-#        with root_open(output_file) as f:
-#            # our collections are flat, need only the objects
-#            for _, _, objects in f.walk():
-#                for name in objects:
-#                    if 'pickle' in name:
-#                        continue
-#                    # obj = f.get(name)
-#        #             plot(obj, name, output_folder)
+        self.efficiencies.draw_plots(self.output_folder,"png")
         return True
-
