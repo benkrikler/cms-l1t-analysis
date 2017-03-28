@@ -10,6 +10,8 @@ ROOT.PyConfig.IgnoreCommandLineOptions = True
 ROOT.gROOT.SetBatch(1)
 ROOT.TH1.SetDefaultSumw2(True)
 separator='=' * 80
+section = [separator, '{0}', separator]
+section = '\n'.join(section)
 
 def create_cli_parser():
     from argparse import ArgumentParser
@@ -39,7 +41,6 @@ def create_cli_parser():
     return parser
 
 def get_unique_out_dir(outdir=None,revision=1):
-    print(outdir,revision)
     if not outdir :
         outdir=os.path.join(
                 "workspace",
@@ -47,21 +48,17 @@ def get_unique_out_dir(outdir=None,revision=1):
                     y=TODAY.tm_year, m=TODAY.tm_mon, d=TODAY.tm_mday)
                 )
     full_outdir=outdir+"-rev_{rev}".format(rev=revision)
-    print(full_outdir)
     if os.path.isdir(full_outdir):
         return get_unique_out_dir(outdir,revision+1)
+    print("Will write output to: ",full_outdir)
     return full_outdir
 
-def parse_args(parser):
-    args=parser.parse_args()
+def clean_args(args):
+    print(section.format("Starting CMS L1T Analsysis"))
     args.out_dir=get_unique_out_dir(args.out_dir)
     return args
 
 def run(args):
-    section = [separator, '{0}', separator]
-    section = '\n'.join(section)
-    print(section.format("Starting CMS L1T Analsysis"))
-
     # Fetch the analyzer
     analyzer=args.analysis.Analyzer(args)
 
@@ -71,7 +68,7 @@ def run(args):
     reader = EventReader(args.inputs, events=args.n_events)
     is_ok=analyzer.prepare_for_events(reader)
     if is_ok is not True:
-        return False
+        return "Problem during prepare_for_events() with analyzer: "+str(args.analysis)
 
     print(section.format("Processing events"))
     # Fill the histograms from the tuples
@@ -85,16 +82,27 @@ def run(args):
     print(section.format("Making plots"))
     is_ok=analyzer.make_plots()
     if is_ok is not True:
-        return False
+        return "Problem during make_plots() with analyzer: "+str(args.analysis)
 
     # Finalize
     print(section.format("Finalizing things"))
     is_ok=analyzer.finalize()
+    if is_ok is not True:
+        return "Problem during finalize() with analyzer: "+str(args.analysis)
 
-    print('\n',separator,'\n')
     return is_ok
 
 if __name__ == '__main__':
     parser=create_cli_parser()
-    args=parse_args(parser)
-    run(args)
+    args=parser.parse_args()
+
+    # Begin the main analysis
+    args=clean_args(args)
+    isok=run(args)
+
+    print('\n'+separator+'\n')
+    if isok is not True:
+        print("There were errors during running:")
+        print(isok)
+        print('\n'+separator+'\n')
+
