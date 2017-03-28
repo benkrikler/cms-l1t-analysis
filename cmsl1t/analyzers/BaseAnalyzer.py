@@ -1,10 +1,13 @@
 """ A Base class to be used by the various analyzers"""
 
 import exceptions
+import os
 
 class BaseAnalyzer():
-    def __init__():
-        pass
+    def __init__(self,name,config):
+        self.name=name
+        self.output_folder=config.out_dir
+        os.makedirs(self.output_folder)
 
     def prepare_for_events(self,reader):
         """

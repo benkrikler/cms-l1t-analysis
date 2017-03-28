@@ -2,14 +2,15 @@
 Study the MET distibutions and various PUS schemes
 """
 
-import BaseAnalyzer
+from BaseAnalyzer import BaseAnalyzer
 
 class Analyzer(BaseAnalyzer.BaseAnalyzer):
     def __init__(self):
         pass
 
-#    def prepare_for_events(self,reader):
-#        pass
+class Analyzer(BaseAnalyzer):
+    def __init__(self,config):
+        super(self,BaseAnalyzer).init("study_met",config)
 
     def process_event(self,entry,event):
         pass
