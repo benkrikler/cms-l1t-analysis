@@ -3,7 +3,7 @@
 import exceptions
 import os
 
-class BaseAnalyzer():
+class BaseAnalyzer(object):
     def __init__(self,name,config):
         self.name=name
         self.output_folder=config.out_dir
