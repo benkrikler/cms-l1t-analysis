@@ -54,7 +54,7 @@ def run(args):
     print(section.format("Starting CMS L1T Analsysis"))
 
     # Fetch the analyzer
-    analyzer=args.analysis.Analyzer()
+    analyzer=args.analysis.Analyzer(args.out_dir)
 
     # Open the data files
     print(section.format("Loading data"))
