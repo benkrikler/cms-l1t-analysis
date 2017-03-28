@@ -12,7 +12,7 @@ clean-external:
 	@rm -fr external
 
 clean-so:
-	@find external -name "*.so" -exec rm {} \;
+	@[ -d external ] && find external -name "*.so" -exec rm {} \;
 	@find legacy -name "*.so" -exec rm {} \;
 
 clean-pyc:

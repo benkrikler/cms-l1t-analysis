@@ -94,6 +94,11 @@ ENV/
 # Vagrant folder
 .vagrant
 
+# common editor backup files
+~*
+.*sw[po]
+
+# Custom ignores
 external
 workspace
 data
