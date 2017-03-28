@@ -18,9 +18,10 @@ logger = logging.getLogger(__name__)
 class _EfficiencyCurve(object):
 
     def __init__(self, name, bins, threshold):
-        self._pass = Hist(bins, name=name + '_pass')
-        self._total = Hist(bins, name=name + '_total')
-        self._dist = Hist(bins, name=name + '_dist')
+        self.name=name
+        self._pass = rplt.Hist(bins, name=name + '_pass')
+        self._total = rplt.Hist(bins, name=name + '_total')
+        self._dist = rplt.Hist(bins, name=name + '_dist')
         self._threshold = threshold
         self._efficiency = None
 
@@ -47,6 +48,13 @@ class _EfficiencyCurve(object):
             self.calculate_efficiency()
         return self._efficiency
 
+    def merge(self,another_eff_curve):
+        """ Dont forget to call calculate_efficiency() once all merges are finished"""
+        if isinstance(another_eff_curve,int):
+            return
+        self._pass.Add(another_eff_curve._pass)
+        self._total.Add(another_eff_curve._total)
+        self._dist.Add(another_eff_curve._dist)
 
 class EfficiencyCollection(HistogramsByPileUpCollection):
     '''
@@ -69,10 +77,12 @@ class EfficiencyCollection(HistogramsByPileUpCollection):
     def __init__(self, pileupBins=[0, 13, 20, 999]):
         self._dimensions = 3
         self._thresholds = {}
+        self._bins = {}
         HistogramsByPileUpCollection.__init__(
             self, pileupBins=pileupBins, dimensions=self._dimensions)
         self._pileUp = 0
         self._pileUpBins = pileupBins
+        self.variables=set()
 
     def add_variable(self, variable, bins, thresholds):
         """ This function adds a variable to be tracked by this collection.
@@ -84,10 +94,12 @@ class EfficiencyCollection(HistogramsByPileUpCollection):
         :type thresholds: list.
         """
         # TODO: this will no longer work since 1st dimension is pileup
-        if variable in self.keys():
+        if variable in self.variables:
             logger.warn('Variable {0} already exists!')
             return
+        self.variables.add(variable)
         self._thresholds[variable] = thresholds
+        self._bins[variable] = bins
         hist_names = []
         add_name = hist_names.append
 
@@ -122,3 +134,37 @@ class EfficiencyCollection(HistogramsByPileUpCollection):
     def to_root(self, output_file):
         self._calculateEfficiencies()
         HistogramsByPileUpCollection.to_root(self, output_file)
+
+    @staticmethod
+    def from_root(input_file):
+        instance=HistogramsByPileUpCollection.from_root(self, input_file)
+        # Need to recalculate efficiency curves in case combined histogram files have been read back in
+        instance._calculateEfficiencies()
+
+    def summarise(self):
+        '''
+            Sums histograms across PU bins
+        '''
+        logger.info("Summarizing plots")
+        for variable in self.variables:
+            bins=self._bins[variable]
+            for threshold in self._thresholds[variable]:
+                name = '{0}_threshold_gt{1}'.format(variable, threshold)
+                summed=_EfficiencyCurve(name, bins, threshold)
+                for pu_hists in self.values():
+                    summed.merge(pu_hists[variable][threshold])
+                summed.calculate_efficiency()
+                self["sum"][variable][threshold] = summed
+
+#----------------------------------------------------------------
+#TODO: These should probably be in some base class
+#TODO: Many of these things really want access to some global configuration variables
+#----------------------------------------------------------------
+
+    def _get_plot_name(self,name_kernel):
+        """ 
+        TODO: This should probably be in some base class
+        """
+        import os.path
+        return os.path.join(self.output_folder,name_kernel+"."+self.draw_extension)
+

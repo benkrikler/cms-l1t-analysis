@@ -31,20 +31,27 @@ class HistogramsByPileUpCollection(BaseHistCollection):
     def _get_pu_bin(self, pileup):
         '''
             Returns the pileup bin corresponding to the provided pileup value.
+            The first valid pile-up bin is indexed with 1, index is 0 is reserved for the summary data
+            Over or underflowing values return -1
 
             :Example:
                 >>> hists = HistogramsByPileUp(pileupBins=[0,10,15,20,30,999])
-                >>> hists._get_pu_bin(1) # returns 0
-                >>> hists._get_pu_bin(11) # returns 1
+                >>> hists._get_pu_bin(1) # returns 1
+                >>> hists._get_pu_bin(11) # returns 2
                 >>> hists._get_pu_bin(1111) # returns -1
         '''
-        if pileup > max(self._pileupBins):
+        if isinstance(pileup,str):
+            if pileup=="sum": return 0
+
+        if pileup > self._pileupBins[-1] or pileup < self._pileupBins[0]:
             return -1
 
         bins = pairwise(self._pileupBins)
-        for i, (lowerEdge, upperEdge) in enumerate(bins):
+        for i, (lowerEdge, upperEdge) in enumerate(bins,1):
             if pileup >= lowerEdge and pileup < upperEdge:
                 return i
+
+        # Should never hit here
         return 0
 
     def __getitem__(self, key):
@@ -62,6 +69,11 @@ class HistogramsByPileUpCollection(BaseHistCollection):
             Saves the instance into a ROOT file
         '''
         # need to add pileupHist manually
+        try:
+            self.summarise()
+        except NotImplementedError as e:
+            print(str(e))
+
         to_root([self, self._pileupHist], output_file)
 
     @staticmethod
