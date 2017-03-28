@@ -41,6 +41,20 @@ class BaseAnalyzer(object):
         raise NotImplementedError("fill_histograms needs to be implemented")
         return True
 
+    def write_histograms(self):
+        """ 
+        Has to be overloaded by users code. 
+
+        Called after all events have been read, so that histograms can be written to file).
+        Note that plots should not be drawn here, since this method will not be called if we are running off previously filled histograms.
+
+        returns:
+          Should return True if histograms were written without problem.
+          If anything else is returned, processing of the trees will stop
+        """
+        raise NotImplementedError("write_histograms() needs to be implemented")
+        return True
+
     def make_plots(self):
         """ 
         Has to be overloaded by users code. 
@@ -61,3 +75,6 @@ class BaseAnalyzer(object):
         Called at the very end of the code to tidy things up before the programs quits
         """
         return True
+
+    def get_histogram_filename(self):
+        return os.path.join(self.output_folder,"histograms.root")
