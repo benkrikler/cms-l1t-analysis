@@ -46,7 +46,6 @@ def parse_args(parser):
             '{y}{m:02d}{d:02d}'.format(
                 y=TODAY.tm_year, m=TODAY.tm_mon, d=TODAY.tm_mday)
             )
-    print(args)
     return args
 
 def run(args):
