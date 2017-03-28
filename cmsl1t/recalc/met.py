@@ -11,7 +11,11 @@ class recalcMET():
         self.mety = 0
         self.__update_mag_phi()
 
-    def calc(self,caloTowers,pileup=None):
+    def __call__(self,caloTowers,pileup=None):
+        self.calculate(caloTowers,pileup)
+        return self.mag
+
+    def calculate(self,caloTowers,pileup=None):
         ets = []
         phis = []
         for tower in caloTowers:
@@ -35,17 +39,8 @@ class recalcMET():
         self.phi= math.atan2(self.mety,self.metx)
         # TODO: Should these members be read-only properties?
 
-def l1MetBarrel(caloTowers):
-    return recalcMET(caloTowers, exclude=lambda tower: abs(tower.ieta) <= 28)
-
-def l1MetFull(caloTowers):
-    return recalcMET(caloTowers)
-
-def l1Met28Only(caloTowers):
-    return recalcMET(caloTowers, exclude=lambda tower: abs(tower.ieta) == 28)
-
-def l1MetBarrelNot28(caloTowers):
-    return recalcMET(caloTowers, exclude=lambda tower: abs(tower.ieta) < 28)
-
-def l1MetNot28HF(caloTowers):
-    return recalcMET(caloTowers, exclude=lambda tower: abs(tower.ieta) != 28)
+l1MetFull=recalcMET()
+l1MetBarrel=recalcMET(     exclude=lambda tower: abs(tower.ieta) <= 28)
+l1Met28Only=recalcMET(     exclude=lambda tower: abs(tower.ieta) == 28)
+l1MetBarrelNot28=recalcMET(exclude=lambda tower: abs(tower.ieta) < 28 )
+l1MetNot28HF=recalcMET(    exclude=lambda tower: abs(tower.ieta) != 28)
