@@ -31,6 +31,10 @@ class Analyzer(BaseAnalyzer):
 #            # 'RecalcL1Met28Only',
 #        ]
 
+    def reload_histograms(self,input_file):
+        self.efficiencies=EfficiencyCollection.from_root(input_file)
+        return True
+
     def prepare_for_events(self,reader):
         bins = np.arange(0, 200, 25)
         thresholds = [70, 90, 110]

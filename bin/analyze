@@ -30,6 +30,7 @@ def create_cli_parser():
     parser.add_argument("-c","--config",help="YAML style config file",type=str) #,required=True)
     parser.add_argument("-a","--analysis",help="Specify which analysis module to use. Must be relative to the analyzers directory",type=import_analyzer,required=True)
     parser.add_argument("-n","--n-events",help="Set how many events to run over",type=int,default=1000)
+    parser.add_argument("-r","--reload-histograms",help="Reload histograms from a file and skip the input tuples",action="store_true",default=False)
 
     # Temporarily add an option to handle the input data specification
     # Soon we expect this to be moved to the YAML config file
@@ -58,10 +59,7 @@ def clean_args(args):
     args.out_dir=get_unique_out_dir(args.out_dir)
     return args
 
-def run(args):
-    # Fetch the analyzer
-    analyzer=args.analysis.Analyzer(args)
-
+def process_tuples(args,analyzer):
     # Open the data files
     print(section.format("Loading data"))
     from cmsl1t.playground.eventreader import EventReader
@@ -77,6 +75,18 @@ def run(args):
         is_ok=analyzer.process_event(entry,event)
         if is_ok is not True:
             break
+
+def run(args):
+    # Fetch the analyzer
+    analyzer=args.analysis.Analyzer(args)
+
+    if not args.reload_histograms:
+        process_tuples(args,analyzer)
+    else:
+        # TODO: Support multiple input root histogram files
+        isok=analyzer.reload_histograms(args.inputs[0])
+        if is_ok is not True:
+            return "Problem in reload_histograms() with analyzer: "+str(args.analysis)
     # Write out the histograms
     analyzer.write_histograms()
 
