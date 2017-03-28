@@ -8,7 +8,7 @@ from collections import defaultdict
 from . import HistogramsByPileUpCollection
 import rootpy.plotting as rplt 
 from rootpy import asrootpy
-from ROOT import TEfficiency,TLatex,gStyle
+from ROOT import TEfficiency,TLatex,gStyle,TF1
 from cmsl1t.utils.iterators import pairwise
 import logging
 
@@ -19,6 +19,7 @@ class _EfficiencyCurve(object):
 
     def __init__(self, name, bins, threshold):
         self.name=name
+        self.bins=bins
         self._pass = rplt.Hist(bins, name=name + '_pass')
         self._total = rplt.Hist(bins, name=name + '_total')
         self._dist = rplt.Hist(bins, name=name + '_dist')
@@ -56,6 +57,63 @@ class _EfficiencyCurve(object):
         self._total.Add(another_eff_curve._total)
         self._dist.Add(another_eff_curve._dist)
 
+    def fit_efficiency(self):
+        fit_functions=[]
+        fit_functions.append("0.5*(1+TMath::Erf((x-[0])*[1]))")
+
+        # Fit with an exponentially modified Gaussian (EMG)
+        # From Wikipedia ( https:#en.wikipedia.org/wiki/Exponentially_modified_Gaussian_distribution ) the CDF of an EMG is:
+        # CDF = \Phi (u,0,v)-e^{-u+v^{2}/2+\log(\Phi (u,v^{2},v))}}
+        # \Phi (x,\mu ,\sigma ) is the CDF of a Gaussian distribution,
+        # u=\lambda (x-\mu ) 
+        # v=\lambda \sigma 
+        # \lambda (>0) := the exponential decay parameter
+        # \mu := the mean of the Gaussian component
+        # \sigma^2 (>0):= the variance of the Gaussian component
+        # Which simplifies to:
+        # std::string func = "(1+TMath::Erf( (x-[0])*[2]/([1]*[1]))) - exp(-(x - [0] - 0.5/[2]*[1]*[1])/[2])*(1 + TMath::Erf( (x-[0])*[2]/([1]*[1])-1 ))"
+        # [0] = \mu, [1] = \sigma, [2] = 1 / \lambda
+
+        # [0] = \mu,  [1] =  1/( \lambda*\sigma^2 ),  [2] = \lambda
+        scaled_x  = "(x - [0])*[1]"
+        term_1    = "0.5 * (1 + TMath::Erf( {x_prime} ) )"   .format(x_prime=scaled_x)
+        exp_modif = "exp(- [2]/[1]*( {x_prime} -0.5) )"      .format(x_prime=scaled_x)
+        term_2    = "0.5 * (1 + TMath::Erf( {x_prime} -1) )" .format(x_prime=scaled_x)
+        func      = "{t1} - {exp}*{t2}".format(t1=term_1,exp=exp_modif,t2=term_2)
+        fit_functions.append(func)
+
+        self.functions=[]
+        for i,func in enumerate(fit_functions):
+            fitFcn=TF1("fit_%s_%d"%(self._efficiency.GetName(),i),func,self.bins[0],self.bins[-1])
+            self.functions.append(fitFcn)
+
+            if i==0:
+                mu = p50
+                sigma = 10
+                fitFcn.SetParameters(mu,1/sigma)
+            elif i==1:
+                mu = self.functions[0].GetParameter(0)
+                sigma = 1/self.functions[0].GetParameter(1)
+                lamda = 0.05 # should be within 0.04 and 0.06 it seems
+
+                p0 = mu; 
+                p1 = 1/(sigma)
+                p2 = lamda
+                fitFcn.SetParameters(p0,p1,p2,0)
+
+            success=self._efficiency.Fit(fitFcn.GetName(),"ESMQ ROB EX0+"); 
+
+            fitFcn.SetLineColor(self._efficiency.GetLineColor())
+            fitFcn.SetLineWidth(2)
+            fitFcn.SetLineStyle(i)
+            graph_line=self._efficiency.GetListOfFunctions().Last()
+            if graph_line:
+                graph_line.SetLineColor(self._efficiency.GetLineColor())
+                graph_line.SetLineWidth(2)
+                graph_line.SetLineStyle(2-i)
+
+        self._efficiency.GetListOfFunctions().Print()
+
 class EfficiencyCollection(HistogramsByPileUpCollection):
     '''
         The EfficiencyCollection allows for easy creation and access to turon-on
@@ -83,6 +141,9 @@ class EfficiencyCollection(HistogramsByPileUpCollection):
         self._pileUp = 0
         self._pileUpBins = pileupBins
         self.variables=set()
+
+        # Plotting options
+        self.do_fits=True
 
     def add_variable(self, variable, bins, thresholds):
         """ This function adds a variable to be tracked by this collection.
@@ -126,10 +187,7 @@ class EfficiencyCollection(HistogramsByPileUpCollection):
             h[threshold].fill(recoValue, l1Value, w)
 
     def _calculateEfficiencies(self):
-        for puBinLower, _ in pairwise(self._pileUpBins):
-            for hist in self[puBinLower].keys():
-                for threshold in self._thresholds[hist]:
-                    self[puBinLower][hist][threshold].calculate_efficiency()
+        self._for_each_plot("calculate_efficiency")
 
     def to_root(self, output_file):
         self._calculateEfficiencies()
@@ -157,12 +215,22 @@ class EfficiencyCollection(HistogramsByPileUpCollection):
                 self["sum"][variable][threshold] = summed
 
 
+    def _fit_plots(self):
+        self._for_each_plot("fit_efficiency")
+
+    def _for_each_plot(self,method,*args,**kwargs):
+        for puBinLower, _ in pairwise(self._pileUpBins):
+            for hist in self[puBinLower].keys():
+                for threshold in self._thresholds[hist]:
+                    getattr(self[puBinLower][hist][threshold],method)(args,kwargs)
+
 
     def draw_plots(self,output_folder,img_type):
         self.output_folder=output_folder
         self.draw_extension=img_type
+
         # TODO: implement the following:
-        # if self.do_fits: self.fit_plots()
+        if self.do_fits: self._fit_plots()
 
         for variable in self.variables:
             # Draw the efficiency curves for integrated pile-up for the different levels
