@@ -187,7 +187,7 @@ class EfficiencyCollection(HistogramsByPileUpCollection):
             h[threshold].fill(recoValue, l1Value, w)
 
     def _calculateEfficiencies(self):
-        self._for_each_plot("calculate_efficiency")
+        self._for_each_plot(_EfficiencyCurve.calculate_efficiency)
 
     def to_root(self, output_file):
         self._calculateEfficiencies()
@@ -216,13 +216,13 @@ class EfficiencyCollection(HistogramsByPileUpCollection):
 
 
     def _fit_plots(self):
-        self._for_each_plot("fit_efficiency")
+        self._for_each_plot(_EfficiencyCurve.fit_efficiency)
 
-    def _for_each_plot(self,method,*args,**kwargs):
+    def _for_each_plot(self,method):
         for puBinLower, _ in pairwise(self._pileUpBins):
             for hist in self[puBinLower].keys():
                 for threshold in self._thresholds[hist]:
-                    getattr(self[puBinLower][hist][threshold],method)(args,kwargs)
+                    method(self[puBinLower][hist][threshold])
 
 
     def draw_plots(self,output_folder,img_type):
