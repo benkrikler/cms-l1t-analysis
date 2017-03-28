@@ -88,7 +88,7 @@ class _EfficiencyCurve(object):
             self.functions.append(fitFcn)
 
             if i==0:
-                mu = p50
+                mu = self._threshold
                 sigma = 10
                 fitFcn.SetParameters(mu,1/sigma)
             elif i==1:
@@ -101,14 +101,14 @@ class _EfficiencyCurve(object):
                 p2 = lamda
                 fitFcn.SetParameters(p0,p1,p2,0)
 
-            success=self._efficiency.Fit(fitFcn.GetName(),"ESMQ ROB EX0+"); 
+            success=self._efficiency.Fit(fitFcn,"ESMQ ROB EX0+"); 
 
-            fitFcn.SetLineColor(self._efficiency.GetLineColor())
+            fitFcn.SetLineColor(int(self._efficiency.GetLineColor()))
             fitFcn.SetLineWidth(2)
             fitFcn.SetLineStyle(i)
             graph_line=self._efficiency.GetListOfFunctions().Last()
             if graph_line:
-                graph_line.SetLineColor(self._efficiency.GetLineColor())
+                graph_line.SetLineColor(int(self._efficiency.GetLineColor()))
                 graph_line.SetLineWidth(2)
                 graph_line.SetLineStyle(2-i)
 
