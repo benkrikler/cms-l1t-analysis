@@ -77,6 +77,8 @@ def run(args):
         is_ok=analyzer.process_event(entry,event)
         if is_ok is not True:
             break
+    # Write out the histograms
+    analyzer.write_histograms()
 
     # Turn the histograms to plots
     print(section.format("Making plots"))
