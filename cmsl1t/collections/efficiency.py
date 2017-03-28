@@ -232,6 +232,6 @@ def DrawCmsStamp():
     latex.SetNDC()
     latex.SetTextFont(42)
     latex.SetTextAlign(12)
-    latex.DrawLatexNDC(0.18,0.92,"#bf{CMS} #it{Preliminary} 2016 Data")
+    latex.DrawLatexNDC(gStyle.GetPadLeftMargin(),0.92,"#bf{CMS} #it{Preliminary} 2016 Data")
     latex.SetTextAlign(32)
-    latex.DrawLatexNDC(0.92,0.92,"(13 TeV)")
+    latex.DrawLatexNDC(1-gStyle.GetPadRightMargin(),0.92,"(13 TeV)")
