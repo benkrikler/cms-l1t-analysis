@@ -60,4 +60,4 @@ class BaseAnalyzer(object):
 
         Called at the very end of the code to tidy things up before the programs quits
         """
-        pass
+        return True
