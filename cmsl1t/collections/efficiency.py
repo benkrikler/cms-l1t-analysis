@@ -6,9 +6,9 @@
 """
 from collections import defaultdict
 from . import HistogramsByPileUpCollection
-from rootpy.plotting import Hist
+import rootpy.plotting as rplt 
 from rootpy import asrootpy
-from ROOT import TEfficiency
+from ROOT import TEfficiency,TLatex,gStyle
 from cmsl1t.utils.iterators import pairwise
 import logging
 
@@ -156,6 +156,45 @@ class EfficiencyCollection(HistogramsByPileUpCollection):
                 summed.calculate_efficiency()
                 self["sum"][variable][threshold] = summed
 
+
+
+    def draw_plots(self,output_folder,img_type):
+        self.output_folder=output_folder
+        self.draw_extension=img_type
+        # TODO: implement the following:
+        # if self.do_fits: self.fit_plots()
+
+        for variable in self.variables:
+            # Draw the efficiency curves for integrated pile-up for the different levels
+            name="efficiency_{var}".format(var=variable)
+            self._draw_efficiency_curves(name, leg_header=variable
+                    ,leg_labels=[ "> "+str(thresh) for thresh in self._thresholds[variable]]
+                    ,key_list=[ ("sum",variable,threshold) for threshold in self._thresholds[variable] ])
+            for threshold in self._thresholds[variable]:
+                # Draw the efficiency curves for pile-up bins for the different levels
+                thresh_name=name+"_threshold-{thresh}".format(thresh=threshold)
+                self._draw_efficiency_curves(thresh_name, leg_header="{var} > {val}".format(var=variable,val=threshold)
+                    ,leg_labels=[str(low)+"#leq pu <"+str(high) for low,high in pairwise(self._pileUpBins) ]
+                    ,key_list=[ (pileup,variable,threshold) for pileup,_ in pairwise(self._pileUpBins) ])
+
+    def _draw_efficiency_curves(self,save_as,key_list,leg_header=None,leg_labels=None):
+        canvas=rplt.Canvas()
+        legend=rplt.Legend(len(key_list),header=leg_header)
+        # Draw on every curve
+        for i,keys in enumerate(key_list):
+            label=", ".join(map(str,keys))
+            if leg_labels:
+                label=leg_labels[i]
+            hist=self[keys[0]][keys[1]][keys[2]].get_efficiency()
+            if isinstance(hist,int): continue
+            self.SetColor(hist,i,len(key_list))
+            if i==0: hist.Draw("ap")
+            else:    hist.Draw("psame")
+            legend.AddEntry(hist,label)
+        legend.Draw()
+        DrawCmsStamp()
+        canvas.Print(self._get_plot_name(save_as))
+
 #----------------------------------------------------------------
 #TODO: These should probably be in some base class
 #TODO: Many of these things really want access to some global configuration variables
@@ -168,3 +207,31 @@ class EfficiencyCollection(HistogramsByPileUpCollection):
         import os.path
         return os.path.join(self.output_folder,name_kernel+"."+self.draw_extension)
 
+    @staticmethod
+    def SetColor(hist,index,n_indices,setFill=False):
+
+        def CalculateColor(index,n_indices):
+            modifier=0
+            colour=1
+            fraction = (index+0.5)/float(n_indices)
+
+            if index > n_indices-1 or index < 0 or n_indices-1 < 0: colour = 1
+            else:
+                colorIndex = (fraction * (1.0-2.0*modifier) + modifier) * gStyle.GetNumberOfColors();
+                colour = gStyle.GetColorPalette(int(colorIndex));
+            return colour
+
+        colour=CalculateColor(index,n_indices)
+        hist.SetLineColor(colour)
+        hist.SetMarkerColor(colour)
+        if setFill: hist.SetFillColor(colour)
+        else:       hist.SetFillColor(0)
+
+def DrawCmsStamp():
+    latex=TLatex()
+    latex.SetNDC()
+    latex.SetTextFont(42)
+    latex.SetTextAlign(12)
+    latex.DrawLatexNDC(0.18,0.92,"#bf{CMS} #it{Preliminary} 2016 Data")
+    latex.SetTextAlign(32)
+    latex.DrawLatexNDC(0.92,0.92,"(13 TeV)")
