@@ -59,4 +59,4 @@ class Analyzer(BaseAnalyzer):
         return True
 
     def make_plots(self):
-        pass
+        return True
