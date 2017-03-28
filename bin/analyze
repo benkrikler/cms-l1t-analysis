@@ -38,14 +38,23 @@ def create_cli_parser():
                                 command-line expansion""")
     return parser
 
+def get_unique_out_dir(outdir=None,revision=1):
+    print(outdir,revision)
+    if not outdir :
+        outdir=os.path.join(
+                "workspace",
+                '{y}{m:02d}{d:02d}'.format(
+                    y=TODAY.tm_year, m=TODAY.tm_mon, d=TODAY.tm_mday)
+                )
+    full_outdir=outdir+"-rev_{rev}".format(rev=revision)
+    print(full_outdir)
+    if os.path.isdir(full_outdir):
+        return get_unique_out_dir(outdir,revision+1)
+    return full_outdir
+
 def parse_args(parser):
     args=parser.parse_args()
-    if not args.out_dir:
-        args.out_dir= os.path.join(
-            "workspace",
-            '{y}{m:02d}{d:02d}'.format(
-                y=TODAY.tm_year, m=TODAY.tm_mon, d=TODAY.tm_mday)
-            )
+    args.out_dir=get_unique_out_dir(args.out_dir)
     return args
 
 def run(args):
@@ -54,29 +63,36 @@ def run(args):
     print(section.format("Starting CMS L1T Analsysis"))
 
     # Fetch the analyzer
-    analyzer=args.analysis.Analyzer(args.out_dir)
+    analyzer=args.analysis.Analyzer(args)
 
     # Open the data files
     print(section.format("Loading data"))
     from cmsl1t.playground.eventreader import EventReader
     reader = EventReader(args.inputs, events=args.n_events)
-    analyzer.prepare_for_events(reader)
+    is_ok=analyzer.prepare_for_events(reader)
+    if is_ok is not True:
+        return False
 
     print(section.format("Processing events"))
     # Fill the histograms from the tuples
     for entry, event in enumerate(reader):
         if entry%1000==0: print(entry,"of",args.n_events)
-        analyzer.process_event(entry,event)
+        is_ok=analyzer.process_event(entry,event)
+        if is_ok is not True:
+            break
 
     # Turn the histograms to plots
     print(section.format("Making plots"))
-    analyzer.make_plots()
+    is_ok=analyzer.make_plots()
+    if is_ok is not True:
+        return False
 
     # Finalize
     print(section.format("Finalizing things"))
-    analyzer.finalize()
+    is_ok=analyzer.finalize()
 
     print('\n',separator,'\n')
+    return is_ok
 
 if __name__ == '__main__':
     parser=create_cli_parser()
