@@ -246,8 +246,9 @@ class EfficiencyCollection(HistogramsByPileUpCollection):
                     ,key_list=[ (pileup,variable,threshold) for pileup,_ in pairwise(self._pileUpBins) ])
 
     def _draw_efficiency_curves(self,save_as,key_list,leg_header=None,leg_labels=None):
+        n_keys=len(key_list)
         canvas=rplt.Canvas()
-        legend=rplt.Legend(len(key_list),header=leg_header)
+        legend=rplt.Legend(n_keys,header=leg_header)
         # Draw on every curve
         for i,keys in enumerate(key_list):
             label=", ".join(map(str,keys))
@@ -255,7 +256,7 @@ class EfficiencyCollection(HistogramsByPileUpCollection):
                 label=leg_labels[i]
             hist=self[keys[0]][keys[1]][keys[2]].get_efficiency()
             if isinstance(hist,int): continue
-            self.SetColor(hist,i,len(key_list))
+            SetColor(hist,i,n_keys)
             if i==0: hist.Draw("ap")
             else:    hist.Draw("psame")
             legend.AddEntry(hist,label)
@@ -275,25 +276,27 @@ class EfficiencyCollection(HistogramsByPileUpCollection):
         import os.path
         return os.path.join(self.output_folder,name_kernel+"."+self.draw_extension)
 
-    @staticmethod
-    def SetColor(hist,index,n_indices,setFill=False):
+def SetColor(hist,index,n_indices,setFill=False):
 
-        def CalculateColor(index,n_indices):
-            modifier=0
-            colour=1
-            fraction = (index+0.5)/float(n_indices)
+    def CalculateColor(index,n_indices):
+        modifier=0.05
+        colour=1
+        fraction = (index+0.1)/float(n_indices)
 
-            if index > n_indices-1 or index < 0 or n_indices-1 < 0: colour = 1
-            else:
-                colorIndex = (fraction * (1.0-2.0*modifier) + modifier) * gStyle.GetNumberOfColors();
-                colour = gStyle.GetColorPalette(int(colorIndex));
-            return colour
+        if index > n_indices-1 or index < 0 or n_indices-1 < 0: colour = 1
+        else:
+            colorIndex = (fraction * (1.0-2.0*modifier) + modifier) * gStyle.GetNumberOfColors();
+            colour = gStyle.GetColorPalette(int(colorIndex));
+        return colour
 
-        colour=CalculateColor(index,n_indices)
-        hist.SetLineColor(colour)
-        hist.SetMarkerColor(colour)
-        if setFill: hist.SetFillColor(colour)
-        else:       hist.SetFillColor(0)
+    colour=CalculateColor(index,n_indices)
+    hist.SetLineColor(colour)
+    hist.SetMarkerColor(colour)
+    if setFill: hist.SetFillColor(colour)
+    else:       hist.SetFillColor(0)
+    for func in hist.GetListOfFunctions():
+        if func.InheritsFrom("TAttLine"):
+            func.SetLineColor(colour)
 
 def DrawCmsStamp():
     latex=TLatex()
