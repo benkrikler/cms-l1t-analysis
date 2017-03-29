@@ -1,7 +1,6 @@
 #!/bin/env python
 from __future__ import print_function
 import ROOT
-import time
 import os
 from datetime import datetime
 from cmsl1t.utils.timers import timerfunc
@@ -14,121 +13,141 @@ TODAY = datetime.now().timetuple()
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 ROOT.gROOT.SetBatch(1)
 ROOT.TH1.SetDefaultSumw2(True)
-separator='=' * 80
+separator = '=' * 80
 section = [separator, '{0}', separator]
 section = '\n'.join(section)
+
 
 def create_cli_parser():
     from argparse import ArgumentParser
     from importlib import import_module
     from cmsl1t.utils.root_glob import glob
+
     def import_analyzer(analyzer_name):
-        module=None
+        module = None
         try:
-            module=import_module("cmsl1t.analyzers."+str(analyzer_name))
-        except ImportError as e:
-            ArgumentParser.error("Cannot find module, '{}', from the analyzers directory".format(analyzer_name))
+            module = import_module("cmsl1t.analyzers."+str(analyzer_name))
+        except ImportError:
+            msg = "Cannot find module, '{}', from the analyzers directory"
+            ArgumentParser.error(msg.format(analyzer_name))
         return module
 
-    parser=ArgumentParser()
-    parser.add_argument("-o","--out-dir")
-    parser.add_argument("-c","--config",help="YAML style config file",type=str) #,required=True)
-    parser.add_argument("-a","--analysis",help="Specify which analysis module to use. Must be relative to the analyzers directory",type=import_analyzer,required=True)
-    parser.add_argument("-n","--n-events",help="Set how many events to run over",type=int,default=1000)
-    parser.add_argument("-r","--reload-histograms",help="Reload histograms from a file and skip the input tuples",action="store_true",default=False)
+    parser = ArgumentParser()
+    parser.add_argument("-o", "--out-dir")
+    parser.add_argument(
+            "-c", "--config", type=str,  # required=True,
+            help="YAML style config file")
+    parser.add_argument(
+            "-a", "--analysis", type=import_analyzer, required=True,
+            help="""Specify which analysis module to use. Must be relative
+                 to the analyzers directory""")
+    parser.add_argument(
+            "-n", "--n-events", type=int, default=1000,
+            help="Set how many events to run over")
+    parser.add_argument(
+            "-r", "--reload-histograms", action="store_true", default=False,
+            help="Reload histograms from a file and skip the input tuples")
 
     # Temporarily add an option to handle the input data specification
     # Soon we expect this to be moved to the YAML config file
-    parser.add_argument("-i","--inputs",required=True,type=glob
-                        ,help="""DEPRECATED: Specify the input files to run over.
-                                Globbing is possible, but remember to escape things 
-                                properly so it is handled by python and not BASH's
-                                command-line expansion""")
+    parser.add_argument(
+            "-i", "--inputs", required=True, type=glob,
+            help="""DEPRECATED: Specify the input files to run over.
+                    Globbing is possible, but remember to escape things
+                    properly so it is handled by python and not BASH's
+                    command-line expansion""")
     return parser
 
-def get_unique_out_dir(outdir=None,revision=1):
-    if not outdir :
-        outdir=os.path.join(
+
+def get_unique_out_dir(outdir=None, revision=1):
+    if not outdir:
+        outdir = os.path.join(
                 "workspace",
                 '{y}{m:02d}{d:02d}'.format(
                     y=TODAY.tm_year, m=TODAY.tm_mon, d=TODAY.tm_mday)
                 )
-    full_outdir=outdir+"-rev_{rev}".format(rev=revision)
+    full_outdir = outdir+"-rev_{rev}".format(rev=revision)
     if os.path.isdir(full_outdir):
-        return get_unique_out_dir(outdir,revision+1)
-    print("Will write output to: ",full_outdir)
+        return get_unique_out_dir(outdir, revision+1)
+    print("Will write output to: ", full_outdir)
     return full_outdir
+
 
 def clean_args(args):
     print(section.format("Starting CMS L1T Analsysis"))
-    args.out_dir=get_unique_out_dir(args.out_dir)
+    args.out_dir = get_unique_out_dir(args.out_dir)
     return args
 
+
 @timerfunc(logger.info)
-def process_tuples(args,analyzer):
+def process_tuples(args, analyzer):
     # Open the data files
     print(section.format("Loading data"))
     print("Input files:")
-    if len(args.inputs)>10:
-        print(args.inputs[:10],"... and",len(args.inputs)-10,"more files")
+    if len(args.inputs) > 10:
+        print(args.inputs[:10], "... and", len(args.inputs)-10, "more files")
     else:
         print(args.inputs)
 
     from cmsl1t.playground.eventreader import EventReader
     reader = EventReader(args.inputs, events=args.n_events)
-    is_ok=analyzer.prepare_for_events(reader)
+    is_ok = analyzer.prepare_for_events(reader)
     if is_ok is not True:
-        return "Problem during prepare_for_events() with analyzer: "+str(args.analysis)
+        return "Problem during prepare_for_events() with analyzer: "\
+                + str(args.analysis)
 
     print(section.format("Processing events"))
     # Fill the histograms from the tuples
-    counter_rate=args.n_events/10 if args.n_events <= 10000 else 1000
+    counter_rate = args.n_events/10 if args.n_events <= 10000 else 1000
     for entry, event in enumerate(reader):
-        if entry%counter_rate==0: print(entry,"of",args.n_events)
-        is_ok=analyzer.process_event(entry,event)
+        if entry % counter_rate == 0:
+            print(entry, "of", args.n_events)
+        is_ok = analyzer.process_event(entry, event)
         if is_ok is not True:
             break
-    print(args.n_events,"of",args.n_events)
+    print(args.n_events, "of", args.n_events)
+
 
 def run(args):
     # Fetch the analyzer
-    analyzer=args.analysis.Analyzer(args)
+    analyzer = args.analysis.Analyzer(args)
 
     if not args.reload_histograms:
-        process_tuples(args,analyzer)
+        process_tuples(args, analyzer)
     else:
         # TODO: Support multiple input root histogram files
-        isok=analyzer.reload_histograms(args.inputs[0])
+        is_ok = analyzer.reload_histograms(args.inputs[0])
         if is_ok is not True:
-            return "Problem in reload_histograms() with analyzer: "+str(args.analysis)
+            return "Problem in reload_histograms() with analyzer: " \
+                    + str(args.analysis)
     # Write out the histograms
     analyzer.write_histograms()
 
     # Turn the histograms to plots
     print(section.format("Making plots"))
-    is_ok=analyzer.make_plots()
+    is_ok = analyzer.make_plots()
     if is_ok is not True:
         return "Problem during make_plots() with analyzer: "+str(args.analysis)
 
     # Finalize
     print(section.format("Finalizing things"))
-    is_ok=analyzer.finalize()
+    is_ok = analyzer.finalize()
     if is_ok is not True:
         return "Problem during finalize() with analyzer: "+str(args.analysis)
 
     return is_ok
 
+
 if __name__ == '__main__':
-    parser=create_cli_parser()
-    args=parser.parse_args()
+    parser = create_cli_parser()
+    args = parser.parse_args()
 
     # Begin the main analysis
-    args=clean_args(args)
-    isok=run(args)
+    args = clean_args(args)
+    isok = run(args)
 
     print('\n'+separator+'\n')
     if isok is not True:
         print("There were errors during running:")
         print(isok)
         print('\n'+separator+'\n')
-
