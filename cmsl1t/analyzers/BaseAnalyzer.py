@@ -1,15 +1,16 @@
-""" A Base class to be used by the various analyzers"""
-
-import exceptions
 import os
 
+
 class BaseAnalyzer(object):
-    def __init__(self,name,config):
-        self.name=name
-        self.output_folder=config.out_dir
+    """
+    A Base class to be used by the various analyzers
+    """
+    def __init__(self, name, config):
+        self.name = name
+        self.output_folder = config.out_dir
         os.makedirs(self.output_folder)
 
-    def prepare_for_events(self,reader):
+    def prepare_for_events(self, reader):
         """
         Can be overloaded in the derived class.
         Called once, after the input trees have been prepared.
@@ -20,13 +21,13 @@ class BaseAnalyzer(object):
         """
         return True
 
-    def process_event(self,entry,event):
+    def process_event(self, entry, event):
         """Should not really be overloaded in the derived class"""
-        return self.fill_histograms(entry,event)
+        return self.fill_histograms(entry, event)
 
-    def fill_histograms(self,entry,event):
-        """ 
-        Has to be overloaded by users code. 
+    def fill_histograms(self, entry, event):
+        """
+        Has to be overloaded by users code.
 
         Called once per input event in the tuples.
 
@@ -42,11 +43,13 @@ class BaseAnalyzer(object):
         return True
 
     def write_histograms(self):
-        """ 
-        Has to be overloaded by users code. 
+        """
+        Has to be overloaded by users code.
 
-        Called after all events have been read, so that histograms can be written to file).
-        Note that plots should not be drawn here, since this method will not be called if we are running off previously filled histograms.
+        Called after all events have been read, so that histograms can be
+        written to file).  Note that plots should not be drawn here, since this
+        method will not be called if we are running off previously filled
+        histograms.
 
         returns:
           Should return True if histograms were written without problem.
@@ -56,11 +59,12 @@ class BaseAnalyzer(object):
         return True
 
     def make_plots(self):
-        """ 
-        Has to be overloaded by users code. 
+        """
+        Has to be overloaded by users code.
 
-        Called after all events have been read to convert histograms to actual plots
-        Might be called on existing files of histograms (ie. without reading tuples in again)
+        Called after all events have been read to convert histograms to actual
+        plots Might be called on existing files of histograms (ie. without
+        reading tuples in again)
 
         returns:
           Should return True if plots were produced without problem.
@@ -72,9 +76,10 @@ class BaseAnalyzer(object):
         """
         Can be overloaded in the derived class if needed.
 
-        Called at the very end of the code to tidy things up before the programs quits
+        Called at the very end of the code to tidy things up before the
+        programs quits
         """
         return True
 
     def get_histogram_filename(self):
-        return os.path.join(self.output_folder,"histograms.root")
+        return os.path.join(self.output_folder, "histograms.root")
