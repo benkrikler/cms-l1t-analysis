@@ -1,6 +1,7 @@
 from __future__ import print_function
 import time
 
+
 def timerfunc(printer=print):
     """
     A timer decorator
@@ -16,8 +17,7 @@ def timerfunc(printer=print):
             runtime = end - start
             msg = "The runtime for {func} took {time} seconds to complete"
             printer(msg.format(func=func.__name__,
-                             time=runtime))
+                               time=runtime))
             return value
         return function_timer
     return wrapper
-

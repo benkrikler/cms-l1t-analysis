@@ -8,6 +8,7 @@ from functools import partial
 import cmsl1t.recalc.met as recalc
 import numpy as np
 
+
 class Analyzer(BaseAnalyzer):
     def __init__(self,config):
         super(Analyzer,self).__init__("study_met",config)
