@@ -44,7 +44,7 @@ def glob(pathname):
                 continue
             if not fnmatch.fnmatchcase(file, basename):
                 continue
-            files.append(file)
+            files.append(os.path.join(dirname,file))
         gSystem.FreeDirectory(directory)
     return files
 
