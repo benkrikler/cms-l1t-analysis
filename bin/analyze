@@ -4,6 +4,10 @@ import ROOT
 import time
 import os
 from datetime import datetime
+from cmsl1t.utils.timers import timerfunc
+
+import logging
+logger = logging.getLogger(__name__)
 
 TODAY = datetime.now().timetuple()
 ROOT.PyConfig.IgnoreCommandLineOptions = True
@@ -59,6 +63,7 @@ def clean_args(args):
     args.out_dir=get_unique_out_dir(args.out_dir)
     return args
 
+@timerfunc(logger.info)
 def process_tuples(args,analyzer):
     # Open the data files
     print(section.format("Loading data"))
