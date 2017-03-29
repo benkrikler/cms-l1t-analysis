@@ -112,8 +112,6 @@ class _EfficiencyCurve(object):
                 graph_line.SetLineWidth(2)
                 graph_line.SetLineStyle(2-i)
 
-        self._efficiency.GetListOfFunctions().Print()
-
 class EfficiencyCollection(HistogramsByPileUpCollection):
     '''
         The EfficiencyCollection allows for easy creation and access to turon-on
