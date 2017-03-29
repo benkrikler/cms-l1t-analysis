@@ -8,6 +8,7 @@ from cmsl1t.utils.timers import timerfunc
 
 import logging
 logger = logging.getLogger(__name__)
+logging.getLogger("rootpy.tree.chain").setLevel(logging.WARNING)
 
 TODAY = datetime.now().timetuple()
 ROOT.PyConfig.IgnoreCommandLineOptions = True
@@ -20,7 +21,7 @@ section = '\n'.join(section)
 def create_cli_parser():
     from argparse import ArgumentParser
     from importlib import import_module
-    import glob
+    from cmsl1t.utils.root_glob import glob
     def import_analyzer(analyzer_name):
         module=None
         try:
@@ -38,7 +39,7 @@ def create_cli_parser():
 
     # Temporarily add an option to handle the input data specification
     # Soon we expect this to be moved to the YAML config file
-    parser.add_argument("-i","--inputs",required=True,type=glob.glob
+    parser.add_argument("-i","--inputs",required=True,type=glob
                         ,help="""DEPRECATED: Specify the input files to run over.
                                 Globbing is possible, but remember to escape things 
                                 properly so it is handled by python and not BASH's
@@ -67,6 +68,12 @@ def clean_args(args):
 def process_tuples(args,analyzer):
     # Open the data files
     print(section.format("Loading data"))
+    print("Input files:")
+    if len(args.inputs)>10:
+        print(args.inputs[:10],"... and",len(args.inputs)-10,"more files")
+    else:
+        print(args.inputs)
+
     from cmsl1t.playground.eventreader import EventReader
     reader = EventReader(args.inputs, events=args.n_events)
     is_ok=analyzer.prepare_for_events(reader)
@@ -75,11 +82,13 @@ def process_tuples(args,analyzer):
 
     print(section.format("Processing events"))
     # Fill the histograms from the tuples
+    counter_rate=args.n_events/10 if args.n_events <= 10000 else 1000
     for entry, event in enumerate(reader):
-        if entry%1000==0: print(entry,"of",args.n_events)
+        if entry%counter_rate==0: print(entry,"of",args.n_events)
         is_ok=analyzer.process_event(entry,event)
         if is_ok is not True:
             break
+    print(args.n_events,"of",args.n_events)
 
 def run(args):
     # Fetch the analyzer
