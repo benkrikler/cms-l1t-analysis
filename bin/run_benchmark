@@ -1,35 +1,15 @@
 #!/bin/env python
 from __future__ import print_function
 import ROOT
-import time
 import os
 from datetime import datetime
 from cmsl1t.playground import makeJetResolutions, studyTower28MET
+from cmsl1t.utils.timers import timerfunc
 TODAY = datetime.now().timetuple()
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 ROOT.gROOT.SetBatch(1)
 ROOT.TH1.SetDefaultSumw2(True)
 # ROOT.gStyle.SetOptStat(0)
-
-
-def timerfunc(func):
-    """
-    A timer decorator
-    """
-    def function_timer(*args, **kwargs):
-        """
-        A nested function for timing other functions
-        """
-        start = time.time()
-        value = func(*args, **kwargs)
-        end = time.time()
-        runtime = end - start
-        msg = "The runtime for {func} took {time} seconds to complete"
-        print(msg.format(func=func.__name__,
-                         time=runtime))
-        return value
-    return function_timer
-
 
 def compile_legacy():
     print(">> Compiling Legacy macros")
