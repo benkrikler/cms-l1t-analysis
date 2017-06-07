@@ -23,5 +23,5 @@ class TestRecalcMET(unittest.TestCase):
         c1 = TestCaloTower(28, 30, 0)
         c2 = TestCaloTower(22, 30, 0)
         met = l1Met28Only([c1, c2])
-        self.assertEqual(met[0], -c1.ex)
-        self.assertEqual(met[1], -c1.ey)
+        self.assertEqual(met.x, -c1.ex)
+        self.assertEqual(met.y, -c1.ey)

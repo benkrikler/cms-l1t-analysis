@@ -2,20 +2,10 @@ import math
 import numpy as np
 
 
-class met(object):
+class MET(object):
     def __init__(self, metx, mety):
-        self.metx = metx
-        self.mety = mety
-
-    def __getitem__(self, index):
-        if index == 0:
-            return self.metx
-        elif index == 1:
-            return self.mety
-        else:
-            msg = """"Met object can only be indexed with '0' (x),
-                      or '1' (y), not """ + str(index)
-            raise KeyError(msg)
+        self.x = metx
+        self.y = mety
 
     @property
     def mag(self):
@@ -36,7 +26,7 @@ def recalcMET(caloTowers, exclude=None):
         phis.append(phi)
     metx = -sum(ets * np.cos(phis))
     mety = -sum(ets * np.sin(phis))
-    return met(metx, mety)
+    return MET(metx, mety)
 
 
 def l1Met28Only(caloTowers):
