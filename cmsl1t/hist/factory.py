@@ -17,16 +17,16 @@ class HistFactory():
 
     def __init__(self, hist_type, *vargs, **kwargs):
         """
-        Initialise the factory.  
-        If the variable build_err to False if the requested histogram cannot be 
+        Initialise the factory.
+        If the variable build_err to False if the requested histogram cannot be
         found.
 
         Parameters:
         hist_type -- (str) The name of the class of objects this factory builds.
-                     Should be a standard ROOT object, exist in the 
-                     rootpy.plotting.hist package, or be a custom hist deriving 
+                     Should be a standard ROOT object, exist in the
+                     rootpy.plotting.hist package, or be a custom hist deriving
                      from cmsl1t.hist.BaseHistogram
-        *vargs, **kwargs -- These are captured and passed to the objects' 
+        *vargs, **kwargs -- These are captured and passed to the objects'
                             __init__ methods at instantiation. Useful for
                             passing binning specifications, axis names, etc.
         """
@@ -65,8 +65,8 @@ class HistFactory():
 
     def build(self, *new_vargs, **new_kwargs):
         """
-        Actually build an instance of the requested histogram object.  
-        Arguments passed to this method will be combined with those passed to 
+        Actually build an instance of the requested histogram object.
+        Arguments passed to this method will be combined with those passed to
         the initialisation method.
 
         If new_kwargs contains the keyword labels, this will be used to format
@@ -74,7 +74,7 @@ class HistFactory():
         from new_kwargs
 
         Parameters:
-        new_vargs -- appended to vargs that were passed to the factory's init 
+        new_vargs -- appended to vargs that were passed to the factory's init
         new_kwargs -- updates the kwargs that were passed to the factory's init
         """
         if self.build_err:

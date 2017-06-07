@@ -109,7 +109,7 @@ def draw(hists, colourmap="RainBow", colour_values=None,
 
     keyword arguments:
     hists -- a list of plottable objects (hists, graphs, etc)
-    colourmap -- a string to indicate which colour palette to use, see 
+    colourmap -- a string to indicate which colour palette to use, see
                  https://root.cern.ch/doc/master/TColor_8h.html
     colour_values -- a function to give the colour map for a given histogram.
                      If not provided, the colour is determined based on the
