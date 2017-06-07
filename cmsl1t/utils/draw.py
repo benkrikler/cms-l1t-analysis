@@ -82,7 +82,7 @@ def __apply_colour_map(hists, colourmap, colour_values, change_colour):
     change_colour = [c.lower() for c in change_colour]
 
     with preserve_current_style():
-        # Resolve the requested pallette if it's not a function
+        # Resolve the requested palette if it's not a function
         if isinstance(colourmap, str):
             if colourmap in __known_root_pallettes:
                 gStyle.SetPalette(getattr(ROOT, "k" + colourmap))
@@ -104,6 +104,21 @@ def __apply_colour_map(hists, colourmap, colour_values, change_colour):
 
 def draw(hists, colourmap="RainBow", colour_values=None,
          change_colour=("line", "marker"), canvas_args={}, draw_args={}):
+    """
+    Create a standard canvas, fill it with the list of histograms and a legend.
+
+    keyword arguments:
+    hists -- a list of plottable objects (hists, graphs, etc)
+    colourmap -- a string to indicate which colour palette to use, see 
+                 https://root.cern.ch/doc/master/TColor_8h.html
+    colour_values -- a function to give the colour map for a given histogram.
+                     If not provided, the colour is determined based on the
+                     position in the list of histograms.
+    change_colour -- a list of "line", "marker", "fill" to determine which parts
+                     of the plottable to change colour
+    canvas_args -- options to pass through to the rootpy Canvas constructor
+    draw_args -- options to pass through to the rootpy draw method
+    """
     canvas, style = __prepare_canvas(canvas_args)
     hists = __clean(hists)
     __apply_colour_map(hists, colourmap, colour_values, change_colour)
@@ -115,6 +130,14 @@ def draw(hists, colourmap="RainBow", colour_values=None,
 
 
 def label_canvas(sample_title=None, run=None, isData=False):
+    """
+    Put the standard labels on the current canvas
+
+    Keyword arguments:
+    sample_title -- (str) the name of the sample being studied, eg. SingleMu
+    run -- (str) the run number
+    isData -- (bool) whether or not the data is simulated or real
+    """
     latex = TLatex()
     latex.SetNDC()
     latex.SetTextFont(42)
