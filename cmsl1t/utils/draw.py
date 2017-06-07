@@ -95,7 +95,7 @@ def __apply_colour_map(hists, colourmap, colour_values, change_colour):
         for value, hist in enumerate(hists):
             if colour_values:
                 value, max = colour_values(value)
-            colour = colourmap(value, max)
+            colour = colourmap(value + 0.5, max)
             if "line" in change_colour:
                 hist.linecolor = colour
             if "marker" in change_colour:
