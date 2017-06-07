@@ -7,6 +7,18 @@ import rootpy.ROOT as ROOT
 from exceptions import RuntimeError
 
 
+"""
+I would rather not have had to do it this way, but I could see no alternative.
+The TColor header defines an enum for the palettes:
+https://root.cern.ch/doc/master/TColor_8h.html#acb46d776ab87271c3fc10b14c50b169c
+In rootpy (or pyROOT) these are accessible as attributes of ROOT however, since
+the enum is not defined within the TColor class, just in the header file the
+enums end up in the global ROOT namespace.  As a result, it would not really be
+possible to check that a given string is actually a root palette, and not just
+some method / class / variable in the ROOT namespace.  This solves this by
+copying in the valid list of strings from the above link so that we can
+validate that a requested palette actually exists in ROOT.
+"""
 __known_root_pallettes = set(["DeepSea", "GreyScale",
                               "DarkBodyRadiator", "BlueYellow",
                               "RainBow", "InvertedDarkBodyRadiator",
