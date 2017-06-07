@@ -36,7 +36,6 @@ class HistFactory():
 
         self.build_err = ""
         self._prepare_hist_class()
-        if
 
     def _prepare_hist_class(self):
         import rootpy.ROOT as ROOT
